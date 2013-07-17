@@ -1,2 +1,13 @@
+logs
+project/project
+project/target
+target
 tmp
+.history
+.env
 gc.log
+dist
+.classpath
+.project
+.settings
+.target
