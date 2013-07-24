@@ -1,6 +1,7 @@
 package com.anypresence.playframework.cors
 
 import com.typesafe.config.ConfigObject
+
 import play.api.Configuration
 import play.api.GlobalSettings
 import play.api.Logger._
@@ -17,19 +18,20 @@ import play.api.mvc.Request
 import play.api.mvc.WrappedRequest
 import play.api.mvc.Result
 import play.api.mvc.Results._
+
 import scala.collection.JavaConversions._
 import scala.collection.JavaConverters._
 
 object Cors {
   
-  lazy val config: Seq[CorsConfig] = CorsConfigReader.parseConfig
+  private lazy val config: Seq[CorsConfig] = CorsConfigReader.parseConfig
   
-  lazy val origins: Map[String, Seq[Resource]] = 
+  private lazy val origins: Map[String, Seq[Resource]] = 
     config.map { corsConfig: CorsConfig =>
       corsConfig.origins.map { (_ -> corsConfig.resources) }
     }.flatten.toMap
   
-  val noop: (PlainResult) => Result = { result => result }
+  private val noop: (PlainResult) => Result = { result => result }
   
   val corsFilter = Filter { (next, req) =>
     
@@ -71,7 +73,7 @@ object Cors {
         }
         Option(function)
       }
-      
+    
       funcMaybe.getOrElse(noop)
     }.getOrElse {
       debug("Received Non-CORS request")
@@ -164,7 +166,7 @@ object Cors {
       Seq("application/x-www-form-urlencoded", "multipart/form-data", "text/plain").contains(contentType)
     }.getOrElse(false)
   }
-  
+
   private def isPreflightRequest(implicit request: RequestHeader): Boolean = request.method == "OPTIONS" && request.headers.get(ORIGIN).isDefined
   
 }
@@ -172,7 +174,7 @@ object Cors {
 case class CorsConfig(origins: Seq[String], resources: Seq[Resource])
 case class Resource(resourcePattern: String, methods: Seq[String], headers: Seq[String], expose: Seq[String], supportsCredentials: Boolean, maxAge: Option[Long])
 
-object CorsConfigReader {
+protected[cors] object CorsConfigReader {
   
   def parseConfig: Seq[CorsConfig] = {
     val config = current.configuration
