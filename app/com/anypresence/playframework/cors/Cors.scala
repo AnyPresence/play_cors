@@ -34,7 +34,6 @@ object Cors {
   private val noop: (PlainResult) => Result = { result => result }
   
   val corsFilter = Filter { (next, req) =>
-    
     implicit val requestedResource = req.path
     debug("Resource requested is " + requestedResource)
         
@@ -99,7 +98,6 @@ object Cors {
         case async: AsyncResult => async.transform(resultHandlerFunction)
       }    
     }
-    
   }
   
   private def handlePreflight(request: RequestHeader, resource: Resource, origin: String): (PlainResult) => Result = {
@@ -176,6 +174,8 @@ case class Resource(resourcePattern: String, methods: Seq[String], headers: Seq[
 
 protected[cors] object CorsConfigReader {
   
+  private val validHttpMethods = Seq[String]("GET", "PUT", "POST", "DELETE", "TRACE", "CONNECT", "OPTIONS", "HEAD")
+  
   def parseConfig: Seq[CorsConfig] = {
     val config = current.configuration
     
@@ -202,15 +202,24 @@ protected[cors] object CorsConfigReader {
     }.getOrElse(throw reportError("cors.allow.origins", "Must provide one or more origins in cors.allow[" + index + "].origins", config))
   }
   
+  private def validateMethods(methods: Seq[String], allowIndex: Int, resourceIndex: Int, config: Configuration) = {
+    methods.foreach { method: String =>
+      if (!validHttpMethods.contains(method)) {
+        throw reportError("cors.allow.resources.methods", "methods in cors.allow[" + allowIndex + "].resources[" + resourceIndex + "].methods must be one of " + validHttpMethods, config)
+      }
+    }
+    methods
+  }
+  
   private def parseResources(resources: Seq[ConfigObject], allowIndex: Int): Seq[Resource] = {
     resources.zipWithIndex.map { tuple: Tuple2[ConfigObject, Int] => 
       val config = tuple._1
       val resourceIndex = tuple._2
       config.getString("resource_pattern").map { resourcePattern =>
-        val methods = config.getStringList("methods").map { _.asScala }.getOrElse(Seq[String]("GET", "PUT", "POST", "DELETE", "TRACE", "CONNECT", "OPTIONS", "HEAD"))
+        val methods = config.getStringList("methods").map { x => validateMethods(x.asScala, allowIndex, resourceIndex, config) }.getOrElse(validHttpMethods)
         val headers = config.getStringList("headers").map { _.asScala }.getOrElse(Seq[String]()).map { _.toUpperCase() }
         val expose = config.getStringList("expose").map { _.asScala }.getOrElse(Seq[String]())
-        val supportsCredentials = config.getBoolean("supports_credentials").getOrElse(true)
+        val supportsCredentials = config.getBoolean("supports_credentials").getOrElse(false)
         val maxAge = config.getLong("max_age")
         Resource(resourcePattern, methods, headers, expose, supportsCredentials, maxAge)
       }.getOrElse(throw reportError("cors.allow.resources", "resource_pattern must be defined in cors.allow[" + allowIndex + "].resources[" + resourceIndex + "]", config))
