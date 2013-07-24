@@ -1,4 +1,45 @@
-This is your new Play 2.1 application
-=====================================
+To use the Play CORS module in your application:
 
-This file will be packaged with your application, when using `play dist`.
+1. Configure CORS settings similar to the following in your application.conf file
+
+cors = {
+  allow: [ 
+    {
+      origins: [ "localhost:3000", "127.0.0.1:3000" ],
+      resources: [
+        {
+          resource_pattern: "/file/list_all",
+          headers: [ "x-domain-token" ]
+        },
+        {
+          resource_pattern: "file/at/*",
+          methods: [ "GET", "POST", "PUT", "DELETE", "OPTIONS" ],
+          headers: [ "x-domain-token" ],
+          expose: [ "some-custom-response-header" ],
+          supports_credentials: true,
+          max_age: 500
+        }
+      ]
+    }, 
+    {
+      origins: [ "*" ],
+      resources: [
+        {
+          resource_pattern: "/public/*", 
+          headers: [ "any" ],
+          methods: [ "GET" ]
+        }
+      ]
+    }
+  ]
+}
+
+2. Add the filter to your Global file in the base package of your application (if you don't already have one, you'll need to create one).
+
+Example:
+
+import com.anypresence.playframework.cors.Cors
+import play.api.GlobalSettings
+import play.api.mvc.WithFilters
+
+object Global extends WithFilters(Cors.corsFilter) 

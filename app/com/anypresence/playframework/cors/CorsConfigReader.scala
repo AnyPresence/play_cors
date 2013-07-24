@@ -59,7 +59,7 @@ object CorsConfigReader {
   private val corsConfigExample = """|cors = {
                                      |  allow: [ 
                                      |    {
-                                     |      origins: [ "localhost:3000", "127.0.0.1:3000" ],Application
+                                     |      origins: [ "localhost:3000", "127.0.0.1:3000" ],
                                      |      resources: [
                                      |        {
                                      |          resource_pattern: "/file/list_all",
