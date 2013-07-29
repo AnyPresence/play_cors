@@ -78,7 +78,7 @@ class CorsConfigurationSpec extends Specification {
         val lastResource = secondCors.resources(0)
         lastResource.resourcePattern must equalTo("/public/*")
         lastResource.headers.size must equalTo(1)
-        lastResource.headers(0) must equalTo("ANY")
+        lastResource.headers(0) must equalTo("any")
         lastResource.methods must equalTo(Seq("GET"))
         lastResource.expose must equalTo(Seq[String]())
         lastResource.supportsCredentials must equalTo(false)

@@ -22,7 +22,7 @@ import play.api.mvc.Results._
 import scala.collection.JavaConversions._
 import scala.collection.JavaConverters._
 
-object Cors {
+trait CorsImpl {
   
   private lazy val config: Seq[CorsConfig] = CorsConfigReader.parseConfig
   
@@ -54,6 +54,7 @@ object Cors {
       val funcMaybe = resourcesMaybe.flatMap { resources: Seq[Resource] => 
         debug("Resources " + resources + " found for origin " + origin + " and requested resource " + requestedResource)
         val function = resources.find { resource: Resource => 
+          debug("Requested resource is " + requestedResource + " .... compared with " + resource)
           resource.resourcePattern == requestedResource || (resource.resourcePattern.endsWith("*") && requestedResource.startsWith(resource.resourcePattern.dropRight(1)))
         }.map { resource: Resource =>
           if (isSimpleRequest(req)) {
@@ -88,9 +89,13 @@ object Cors {
           debug("Preflight request returning Ok because route is defined")
           Ok
         } else {
+          debug("Preflight request returning NotFound because route is not defined")          
           NotFound
         }
-      }.getOrElse(NotFound)
+      }.getOrElse {
+        debug("No routes found for current application")
+        NotFound
+      }
       resultHandlerFunction(result)
     } else {
       next(req) match {
@@ -114,8 +119,10 @@ object Cors {
       
       if (resource.methods.contains(method)) { 
         
+        val resourceHeadersUpperCase = resource.headers.map { _.toUpperCase() }
+        
         val unexpectedHeader = accessControlRequestHeaders.find { accessControlRequestHeader: String =>
-          !resource.headers.find(_ == accessControlRequestHeader.toUpperCase()).isDefined
+          !resourceHeadersUpperCase.find(_ == accessControlRequestHeader.toUpperCase()).isDefined
         }
         
         if (unexpectedHeader.isDefined) { 
@@ -126,8 +133,9 @@ object Cors {
             val originVal = if (resource.supportsCredentials) origin else "*"
             var newResult = result.withHeaders(ACCESS_CONTROL_ALLOW_ORIGIN -> originVal)
             newResult = resource.maxAge.map { maxAge => newResult.withHeaders(ACCESS_CONTROL_MAX_AGE -> maxAge.toString()) }.getOrElse(newResult)
-            newResult.withHeaders(ACCESS_CONTROL_ALLOW_METHODS -> resource.methods.mkString(", "))
-            newResult.withHeaders(ACCESS_CONTROL_ALLOW_HEADERS -> resource.headers.mkString(", "))
+            newResult = newResult.withHeaders(ACCESS_CONTROL_ALLOW_METHODS -> resource.methods.mkString(", "))
+            newResult = newResult.withHeaders(ACCESS_CONTROL_ALLOW_HEADERS -> resource.headers.mkString(", "))
+            newResult = if (resource.supportsCredentials) newResult.withHeaders(ACCESS_CONTROL_ALLOW_CREDENTIALS -> "true") else newResult
             newResult
           }
         }
@@ -145,27 +153,35 @@ object Cors {
     debug("Resource " + resource + " found for origin " + origin + " and requested resource " + requestedResource)
     val originValue = if (resource.supportsCredentials) origin else "*"
     debug("Responding with ACCESS_CONTROL_ALLOW_ORIGIN " + originValue + " because resources.supportsCredentials is " + resource.supportsCredentials)
-    debug("Headers to espose are " + resource.expose)
+    debug("Headers to expose are " + resource.expose)
     (result: PlainResult) => {
-      result.withHeaders(ACCESS_CONTROL_ALLOW_ORIGIN -> originValue, ACCESS_CONTROL_EXPOSE_HEADERS -> resource.expose.mkString(","))
+      var r = result.withHeaders(ACCESS_CONTROL_ALLOW_ORIGIN -> originValue)
+      r = if (resource.supportsCredentials) r.withHeaders(ACCESS_CONTROL_ALLOW_CREDENTIALS -> "true") else r
+      r = if (!resource.expose.isEmpty) r.withHeaders(ACCESS_CONTROL_EXPOSE_HEADERS -> resource.expose.mkString(",")) else r
+      r
     }
   }
   
   private def isSimpleRequest(implicit request: RequestHeader): Boolean = isSimpleRequestMethod && containsOnlySimpleHeaders && containsSimpleContentType
   
-  private def isSimpleRequestMethod(implicit request: RequestHeader): Boolean = Seq("GET", "HEAD", "POST").contains(request.method)
+  private def isSimpleRequestMethod(implicit request: RequestHeader): Boolean = {
+    debug("request method : " + request.method)
+    Seq("GET", "HEAD", "POST").contains(request.method)
+  }
   
   private def containsOnlySimpleHeaders(implicit request: RequestHeader): Boolean = {
-    !request.headers.keys.exists { !Seq(ACCEPT, ACCEPT_LANGUAGE, CONTENT_LANGUAGE, CONTENT_TYPE).contains(_) }
+    debug("request headers : " + request.headers.keys)
+    !request.headers.keys.exists { x:String => !Seq(ACCEPT.toUpperCase(), ACCEPT_LANGUAGE.toUpperCase(), CONTENT_LANGUAGE.toUpperCase(), CONTENT_TYPE.toUpperCase(), ORIGIN.toUpperCase()).contains(x.toUpperCase()) }
   }
   
   private def containsSimpleContentType(implicit request: RequestHeader): Boolean = {
+    debug("content type: " + request.headers.get(CONTENT_TYPE))
     request.headers.get(CONTENT_TYPE).map { contentType: String =>
-      Seq("application/x-www-form-urlencoded", "multipart/form-data", "text/plain").contains(contentType)
+      Seq("application/x-www-form-urlencoded", "multipart/form-data", "text/plain").contains(contentType.toLowerCase())
     }.getOrElse(false)
   }
 
-  private def isPreflightRequest(implicit request: RequestHeader): Boolean = request.method == "OPTIONS" && request.headers.get(ORIGIN).isDefined
+  private def isPreflightRequest(implicit request: RequestHeader): Boolean = request.method == "OPTIONS" && request.headers.get(ORIGIN).isDefined && request.headers.get(ACCESS_CONTROL_REQUEST_METHOD).isDefined
   
 }
 
@@ -217,7 +233,7 @@ protected[cors] object CorsConfigReader {
       val resourceIndex = tuple._2
       config.getString("resource_pattern").map { resourcePattern =>
         val methods = config.getStringList("methods").map { x => validateMethods(x.asScala, allowIndex, resourceIndex, config) }.getOrElse(validHttpMethods)
-        val headers = config.getStringList("headers").map { _.asScala }.getOrElse(Seq[String]()).map { _.toUpperCase() }
+        val headers = config.getStringList("headers").map { _.asScala }.getOrElse(Seq[String]())
         val expose = config.getStringList("expose").map { _.asScala }.getOrElse(Seq[String]())
         val supportsCredentials = config.getBoolean("supports_credentials").getOrElse(false)
         val maxAge = config.getLong("max_age")
@@ -260,3 +276,5 @@ protected[cors] object CorsConfigReader {
                                      |}""".stripMargin
   
 }
+
+object Cors extends CorsImpl
