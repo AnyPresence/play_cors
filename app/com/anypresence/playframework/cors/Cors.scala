@@ -128,7 +128,7 @@ trait CorsImpl {
       debug("" + ACCESS_CONTROL_REQUEST_METHOD + " is " + method)
       val accessControlRequestHeaders = request.headers.get(ACCESS_CONTROL_REQUEST_HEADERS).map { accessControlRequestHeaders: String => 
         accessControlRequestHeaders.split(",").map { _.trim() }
-      }.getOrElse(Array())
+      }.getOrElse(Array()).toSeq
       
       debug("After parsing " + ACCESS_CONTROL_REQUEST_HEADERS + ", value is " + accessControlRequestHeaders)
       
@@ -140,16 +140,16 @@ trait CorsImpl {
           header.toUpperCase() 
         }
         
-        val unexpectedHeader = accessControlRequestHeaders.find { accessControlRequestHeader: String =>
-          !resourceHeadersUpperCase.find(_ == accessControlRequestHeader.toUpperCase()).isDefined
+        val validHeaders = accessControlRequestHeaders.filter { accessControlRequestHeader: String =>
+          resourceHeadersUpperCase.contains(accessControlRequestHeader.toUpperCase())
         }
         
-        if (!allowAllHeaders && unexpectedHeader.isDefined) { 
-          debug("Header " + unexpectedHeader.get + " was not in the list of expected headers allowed by the resource.  Allowed headers are " + resource.headers)
+        if (!allowAllHeaders && validHeaders.size < accessControlRequestHeaders.size) { 
+          debug("Allowed headers are " + resource.headers + ", but received Access-Control-Request-Headers " + accessControlRequestHeaders)
           noop
         } else {
           (result: PlainResult) => { 
-            val permittedHeaders = if (allowAllHeaders) request.headers.keys else resource.headers
+            val permittedHeaders = if (allowAllHeaders) accessControlRequestHeaders else validHeaders
             
             var newResult = result.withHeaders(ACCESS_CONTROL_ALLOW_ORIGIN -> origin)
             newResult = resource.maxAge.map { maxAge => newResult.withHeaders(ACCESS_CONTROL_MAX_AGE -> maxAge.toString()) }.getOrElse(newResult)
