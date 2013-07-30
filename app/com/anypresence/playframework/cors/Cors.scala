@@ -2,6 +2,8 @@ package com.anypresence.playframework.cors
 
 import com.typesafe.config.ConfigObject
 
+import java.util.regex.PatternSyntaxException
+
 import play.api.Configuration
 import play.api.GlobalSettings
 import play.api.Logger._
@@ -40,15 +42,30 @@ trait CorsImpl {
     val resultHandlerFunction: (PlainResult) => Result = req.headers.get(ORIGIN).map { implicit origin =>
       debug("Received cors request for origin " + origin)
       
-      val resourcesMaybe = if (origins.contains(origin)) { 
+      // first check to see if requested origin is an exact match for one of the configured origins
+      val resourcesMaybe = if (origins.get(origin).isDefined) {
         debug("Matched origin " + origin)
         Some(origins(origin))
-      } else if (origins.contains("*")) {
-        debug("* matched origin " + origin)
-        Some(origins("*"))
       } else {
-        debug("origin " + origin + " not found")
-        None
+        // not an exact match, but check to see if there's a matching configured origin that ends in a wildcard
+        val matchingCorsConfigMaybe = origins.find { pair: Tuple2[String, Seq[Resource]] => 
+          pair._1.startsWith("/") && pair._1.endsWith("/") && pair._1.drop(1).dropRight(1).r.pattern.matcher(origin).matches()
+        }.map { pair => 
+          debug("Origin " + origin + " matched regular expression " + pair._1)
+          pair._2 
+        }
+        if (matchingCorsConfigMaybe.isDefined) {
+          matchingCorsConfigMaybe
+        } else {
+          // lastly, check for the 'catch-all' origin, which is a whole-string wild card
+          val catchAllMaybe = origins.get("*")
+          if (catchAllMaybe.isDefined) {
+            catchAllMaybe
+          } else {
+            // no matching origins found ...
+            None
+          }
+        }
       }
       
       val funcMaybe = resourcesMaybe.flatMap { resources: Seq[Resource] => 
@@ -218,6 +235,14 @@ protected[cors] object CorsConfigReader {
   
   private def parseCorsConfig(config: Configuration, index: Int): CorsConfig = {
     config.getStringList("origins").map { allowedOrigins =>
+        allowedOrigins.foreach { origin:String =>
+          try {
+            if (origin.startsWith("/") && origin.endsWith("/")) origin.drop(1).dropRight(1).r.pattern
+          } catch {
+            case e: PatternSyntaxException => throw reportError("cors.allow.origins", origin + " is not a valid regex!  Must provide an explicit string, a wildcard, or a valid regular expression (a regex should be denoted by a '/' character at the beginning and the end of the string)", config)
+          }
+        }
+      
       config.getObjectList("resources").map { resources =>
         CorsConfig(allowedOrigins, parseResources(resources, index))
       }.getOrElse(throw reportError("cors.allow.resources", "Must provide one ore more resources in cors.allow[" + index + "].resources", config))

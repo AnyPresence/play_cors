@@ -30,6 +30,14 @@ class CorsConfigurationSpec extends Specification {
                                      |          max_age: 500
                                      |        }
                                      |      ]
+                                     |    },
+                                     |    {
+                                     |      origins: [ "/http:\\/\\/.*\\.apple\\.com/" ],
+                                     |      resources: [ 
+                                     |        {
+                                     |          resource_pattern: "/file/list_none"
+                                     |        }
+                                     |      ]
                                      |    }, 
                                      |    {
                                      |      origins: [ "*" ],
@@ -49,7 +57,7 @@ class CorsConfigurationSpec extends Specification {
     "correctly load a valid configuration" in {
       running(fakeApp(corsConfigExample)) {
         val configs = CorsConfigReader.parseConfig
-        configs.size must equalTo(2)
+        configs.size must equalTo(3)
         
         val firstCors = configs(0)
         firstCors.origins must equalTo(Seq("localhost:3000", "127.0.0.1:3000"))
@@ -72,10 +80,21 @@ class CorsConfigurationSpec extends Specification {
         secondResource.maxAge must beSome.which(_ == 500)
         
         val secondCors = configs(1)
-        secondCors.origins must equalTo(Seq("*"))
+        secondCors.origins must equalTo(Seq("/http:\\/\\/.*\\.apple\\.com/"))
         secondCors.resources.size must equalTo(1)
         
-        val lastResource = secondCors.resources(0)
+        val theResource = secondCors.resources(0)
+        theResource.resourcePattern must equalTo("/file/list_none")
+        theResource.methods must equalTo(Seq("GET", "PUT", "POST", "DELETE", "TRACE", "CONNECT", "OPTIONS", "HEAD"))
+        theResource.expose must equalTo(Seq[String]())
+        theResource.supportsCredentials must equalTo(false)
+        theResource.maxAge must beNone
+        
+        val thirdCors = configs(2)
+        thirdCors.origins must equalTo(Seq("*"))
+        thirdCors.resources.size must equalTo(1)
+        
+        val lastResource = thirdCors.resources(0)
         lastResource.resourcePattern must equalTo("/public/*")
         lastResource.headers.size must equalTo(1)
         lastResource.headers(0) must equalTo("*")
@@ -160,6 +179,27 @@ class CorsConfigurationSpec extends Specification {
       running(fakeApp(configText)) {
         CorsConfigReader.parseConfig must throwA[PlayException]
       }
+    }
+    
+    "should fail if origin starts with /, ends with /, but cannot be parsed as a valid regex" in {
+      val configText = """|cors = {
+                          |  allow: [ 
+                          |    {
+                          |      origins: [ "/*/" ],
+                          |      resources: [
+                          |        {
+                          |          resource_pattern: "*",  
+                          |          headers: [ "*" ],
+                          |          methods: [ "SPLORT" ]
+                          |        }
+                          |      ]
+                          |    }
+                          |  ]
+                          |}""".stripMargin
+      running(fakeApp(configText)) {
+        CorsConfigReader.parseConfig must throwA[PlayException]
+      }
+       
     }
     
   }

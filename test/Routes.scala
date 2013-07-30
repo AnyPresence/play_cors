@@ -15,6 +15,7 @@ object Routes extends play.core.Router.Routes {
     case req if (req.method == "GET" && req.path == "/index.html") => FakeController.index
     case req if (Seq("GET", "POST", "PUT", "DELETE").contains(req.method) && req.path == "/file/at/1.html") => FakeController.index
     case req if (Seq("GET", "POST", "HEAD", "DELETE").contains(req.method) && req.path == "/file/list_all") => FakeController.index
+    case req if (Seq("GET", "POST", "HEAD", "DELETE").contains(req.method) && req.path == "/file/list_none") => FakeController.index    
     case req if (req.method == "GET" && req.path == "/file/doesnt_support_creds") => FakeController.index         
     case req if (req.method == "GET" && req.path == "/public/cats") => FakeController.index
 

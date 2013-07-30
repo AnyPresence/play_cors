@@ -71,7 +71,15 @@ class CorsFilterSpec extends Specification {
                                      |          max_age: 500
                                      |        }
                                      |      ]
-                                     |    }, 
+                                     |    },
+                                     |    {
+                                     |      origins: [ "/http:\\/\\/.*\\.apple\\.com/" ],
+                                     |      resources: [
+                                     |        {
+                                     |          resource_pattern: "/file/list_none"
+                                     |        }
+                                     |      ]
+                                     |    },
                                      |    {
                                      |      origins: [ "*" ],
                                      |      resources: [
@@ -251,6 +259,17 @@ class CorsFilterSpec extends Specification {
         val result = route(FakeRequest("OPTIONS", "/public/cats").withHeaders(ORIGIN -> "www.somefakedomain.com:3000", ACCESS_CONTROL_REQUEST_METHOD -> "GET", "X-Ponies" -> "Look!  Ponies!  OMG")).get
         header(ACCESS_CONTROL_ALLOW_ORIGIN, result) must beSome
         header(ACCESS_CONTROL_ALLOW_HEADERS, result) must beSome.which(_.contains("X-Ponies"))
+      }
+      
+      "Accept a regular expression for a given origin" in new WithApplication(fallbackFakeApp) {
+        val result = route(FakeRequest("OPTIONS", "/file/list_none").withHeaders(ORIGIN -> "http://www.apple.com", ACCESS_CONTROL_REQUEST_METHOD -> "GET")).get
+        header(ACCESS_CONTROL_ALLOW_ORIGIN, result) must beSome
+        
+        val result2 = route(FakeRequest("OPTIONS", "/file/list_none").withHeaders(ORIGIN -> "http://aserver.apple.com", ACCESS_CONTROL_REQUEST_METHOD -> "GET")).get
+        header(ACCESS_CONTROL_ALLOW_ORIGIN, result2) must beSome
+        
+        val result3 = route(FakeRequest("OPTIONS", "/file/list_none").withHeaders(ORIGIN -> "http://aserver.aple.com", ACCESS_CONTROL_REQUEST_METHOD -> "GET")).get
+        header(ACCESS_CONTROL_ALLOW_ORIGIN, result3) must beNone
       }
       
     }
