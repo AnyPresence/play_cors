@@ -19,10 +19,6 @@ class CorsTest extends CorsImpl
 
 class Global extends WithFilters(new CorsTest().corsFilter) 
 
-//
-// a simple fake controller
-//
-
 class CorsFilterSpec extends Specification {
   
   private val corsConfigExample = """|cors = {
