@@ -144,7 +144,7 @@ trait CorsImpl {
           !resourceHeadersUpperCase.find(_ == accessControlRequestHeader.toUpperCase()).isDefined
         }
         
-        if (unexpectedHeader.isDefined) { 
+        if (!allowAllHeaders && unexpectedHeader.isDefined) { 
           debug("Header " + unexpectedHeader.get + " was not in the list of expected headers allowed by the resource.  Allowed headers are " + resource.headers)
           noop
         } else {
