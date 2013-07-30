@@ -154,7 +154,7 @@ trait CorsImpl {
             var newResult = result.withHeaders(ACCESS_CONTROL_ALLOW_ORIGIN -> origin)
             newResult = resource.maxAge.map { maxAge => newResult.withHeaders(ACCESS_CONTROL_MAX_AGE -> maxAge.toString()) }.getOrElse(newResult)
             newResult = newResult.withHeaders(ACCESS_CONTROL_ALLOW_METHODS -> resource.methods.mkString(", "))
-            newResult = newResult.withHeaders(ACCESS_CONTROL_ALLOW_HEADERS -> permittedHeaders.mkString(", "))
+            newResult = if (accessControlRequestHeaders.isEmpty) newResult else newResult.withHeaders(ACCESS_CONTROL_ALLOW_HEADERS -> permittedHeaders.mkString(", "))
             newResult = if (resource.supportsCredentials) newResult.withHeaders(ACCESS_CONTROL_ALLOW_CREDENTIALS -> "true") else newResult
             newResult
           }

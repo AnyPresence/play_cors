@@ -252,7 +252,7 @@ class CorsFilterSpec extends Specification {
       }
       
       "Accept any header for a given resource" in new WithApplication(fallbackFakeApp) {
-        val result = route(FakeRequest("OPTIONS", "/public/cats").withHeaders(ORIGIN -> "www.somefakedomain.com:3000", ACCESS_CONTROL_REQUEST_METHOD -> "GET", "X-Ponies" -> "Look!  Ponies!  OMG")).get
+        val result = route(FakeRequest("OPTIONS", "/public/cats").withHeaders(ORIGIN -> "www.somefakedomain.com:3000", ACCESS_CONTROL_REQUEST_METHOD -> "GET", ACCESS_CONTROL_REQUEST_HEADERS -> "X-Ponies", "X-Ponies" -> "Look!  Ponies!  OMG")).get
         header(ACCESS_CONTROL_ALLOW_ORIGIN, result) must beSome
         header(ACCESS_CONTROL_ALLOW_HEADERS, result) must beSome.which(_.contains("X-Ponies"))
       }
@@ -360,9 +360,15 @@ class CorsFilterSpec extends Specification {
       }
       
       "include Access-Control-Allow-Headers configured for a resource" in new WithApplication(fakeApp) {
-        val result = route(FakeRequest("OPTIONS", "/file/at/1.html").withHeaders(ORIGIN -> "localhost:3000", ACCESS_CONTROL_REQUEST_METHOD -> "PUT")).get
+        val result = route(FakeRequest("OPTIONS", "/file/at/1.html").withHeaders(ORIGIN -> "localhost:3000", ACCESS_CONTROL_REQUEST_METHOD -> "PUT", ACCESS_CONTROL_REQUEST_HEADERS -> "X-Domain-Token")).get
         header(ACCESS_CONTROL_ALLOW_ORIGIN, result) must beSome
         header(ACCESS_CONTROL_ALLOW_HEADERS, result) must beSome.which(_ == "X-Domain-Token")
+      }
+      
+      "omit the Access-Control-Allow-Headers header when Access-Control-Request-Header is not present" in new WithApplication(fakeApp) {
+        val result = route(FakeRequest("OPTIONS", "/file/at/1.html").withHeaders(ORIGIN -> "localhost:3000", ACCESS_CONTROL_REQUEST_METHOD -> "PUT")).get
+        header(ACCESS_CONTROL_ALLOW_ORIGIN, result) must beSome
+        //header(ACCESS_CONTROL_ALLOW_HEADERS, result) must beNone
       }
       
     }
