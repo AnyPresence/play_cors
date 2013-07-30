@@ -119,7 +119,11 @@ trait CorsImpl {
       
       if (resource.methods.contains(method)) { 
         
-        val resourceHeadersUpperCase = resource.headers.map { _.toUpperCase() }
+        var allowAllHeaders = false
+        val resourceHeadersUpperCase = resource.headers.map { header:String => 
+          if (header == "*" || header.toUpperCase() == "ANY") allowAllHeaders = true
+          header.toUpperCase() 
+        }
         
         val unexpectedHeader = accessControlRequestHeaders.find { accessControlRequestHeader: String =>
           !resourceHeadersUpperCase.find(_ == accessControlRequestHeader.toUpperCase()).isDefined
@@ -130,11 +134,13 @@ trait CorsImpl {
           noop
         } else {
           (result: PlainResult) => { 
+            val permittedHeaders = if (allowAllHeaders) request.headers.keys() else resource.headers
+            
             val originVal = if (resource.supportsCredentials) origin else "*"
             var newResult = result.withHeaders(ACCESS_CONTROL_ALLOW_ORIGIN -> originVal)
             newResult = resource.maxAge.map { maxAge => newResult.withHeaders(ACCESS_CONTROL_MAX_AGE -> maxAge.toString()) }.getOrElse(newResult)
             newResult = newResult.withHeaders(ACCESS_CONTROL_ALLOW_METHODS -> resource.methods.mkString(", "))
-            newResult = newResult.withHeaders(ACCESS_CONTROL_ALLOW_HEADERS -> resource.headers.mkString(", "))
+            newResult = newResult.withHeaders(ACCESS_CONTROL_ALLOW_HEADERS -> permittedHeaders.mkString(", "))
             newResult = if (resource.supportsCredentials) newResult.withHeaders(ACCESS_CONTROL_ALLOW_CREDENTIALS -> "true") else newResult
             newResult
           }
