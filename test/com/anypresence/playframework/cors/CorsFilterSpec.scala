@@ -325,13 +325,13 @@ class CorsFilterSpec extends Specification {
       
       "omit Access-Control-Allow-Credentials if explicitly not configured for credentials" in new WithApplication(fakeApp) {
         val result = route(FakeRequest("OPTIONS", "/file/doesnt_support_creds").withHeaders(ORIGIN -> "localhost:3000", ACCESS_CONTROL_REQUEST_METHOD -> "PUT")).get
-        header(ACCESS_CONTROL_ALLOW_ORIGIN, result) must beSome.which(_ == "*")
+        header(ACCESS_CONTROL_ALLOW_ORIGIN, result) must beSome.which(_ == "localhost:3000")
         header(ACCESS_CONTROL_ALLOW_CREDENTIALS, result) must beNone
       }
       
       "omit Access-Control-Allow-Credentials if implicitly not configured for credentials" in new WithApplication(fakeApp) {
         val result = route(FakeRequest("OPTIONS", "/file/list_all").withHeaders(ORIGIN -> "localhost:3000", ACCESS_CONTROL_REQUEST_METHOD -> "PUT")).get
-        header(ACCESS_CONTROL_ALLOW_ORIGIN, result) must beSome.which(_ == "*")
+        header(ACCESS_CONTROL_ALLOW_ORIGIN, result) must beSome.which(_ == "localhost:3000")
         header(ACCESS_CONTROL_ALLOW_CREDENTIALS, result) must beNone
       }
       

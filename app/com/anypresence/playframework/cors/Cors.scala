@@ -152,8 +152,7 @@ trait CorsImpl {
           (result: PlainResult) => { 
             val permittedHeaders = if (allowAllHeaders) request.headers.keys else resource.headers
             
-            val originVal = if (resource.supportsCredentials) origin else "*"
-            var newResult = result.withHeaders(ACCESS_CONTROL_ALLOW_ORIGIN -> originVal)
+            var newResult = result.withHeaders(ACCESS_CONTROL_ALLOW_ORIGIN -> origin)
             newResult = resource.maxAge.map { maxAge => newResult.withHeaders(ACCESS_CONTROL_MAX_AGE -> maxAge.toString()) }.getOrElse(newResult)
             newResult = newResult.withHeaders(ACCESS_CONTROL_ALLOW_METHODS -> resource.methods.mkString(", "))
             newResult = newResult.withHeaders(ACCESS_CONTROL_ALLOW_HEADERS -> permittedHeaders.mkString(", "))
