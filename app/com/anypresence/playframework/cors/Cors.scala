@@ -263,7 +263,7 @@ protected[cors] object CorsConfigReader {
         val methods = config.getStringList("methods").map { x => validateMethods(x.asScala, allowIndex, resourceIndex, config) }.getOrElse(validHttpMethods)
         val headers = config.getStringList("headers").map { _.asScala }.getOrElse(Seq[String]())
         val expose = config.getStringList("expose").map { _.asScala }.getOrElse(Seq[String]())
-        val supportsCredentials = config.getBoolean("supports_credentials").getOrElse(false)
+        val supportsCredentials = config.getBoolean("supports_credentials").getOrElse(true)
         val maxAge = config.getLong("max_age")
         Resource(resourcePattern, methods, headers, expose, supportsCredentials, maxAge)
       }.getOrElse(throw reportError("cors.allow.resources", "resource_pattern must be defined in cors.allow[" + allowIndex + "].resources[" + resourceIndex + "]", config))

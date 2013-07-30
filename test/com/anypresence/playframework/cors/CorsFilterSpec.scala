@@ -117,10 +117,10 @@ class CorsFilterSpec extends Specification {
         header(ACCESS_CONTROL_ALLOW_CREDENTIALS, result) must beSome.which(_ == "true")
       }
       
-      "omit Access-Control-Allow-Crerdentials header if the resource does not specify supports credentials" in new WithApplication(fakeApp) {
+      "include Access-Control-Allow-Crerdentials header if the resource does not specify supports credentials" in new WithApplication(fakeApp) {
         val result = route(FakeRequest("GET", "/file/list_all").withHeaders(ORIGIN -> "localhost:3000", CONTENT_TYPE -> "text/plain")).get
-        header(ACCESS_CONTROL_ALLOW_ORIGIN, result) must beSome.which(_ == "*")
-        header(ACCESS_CONTROL_ALLOW_CREDENTIALS, result) must beNone
+        header(ACCESS_CONTROL_ALLOW_ORIGIN, result) must beSome.which(_ == "localhost:3000")
+        header(ACCESS_CONTROL_ALLOW_CREDENTIALS, result) must beSome.which(_ == "true")
       }
       
       "omit Access-Control-Allow-Crerdentials header if the resource specifies that it does not support credentials" in new WithApplication(fakeApp) {
@@ -329,10 +329,10 @@ class CorsFilterSpec extends Specification {
         header(ACCESS_CONTROL_ALLOW_CREDENTIALS, result) must beNone
       }
       
-      "omit Access-Control-Allow-Credentials if implicitly not configured for credentials" in new WithApplication(fakeApp) {
+      "include Access-Control-Allow-Credentials with true if implicitly not configured for credentials" in new WithApplication(fakeApp) {
         val result = route(FakeRequest("OPTIONS", "/file/list_all").withHeaders(ORIGIN -> "localhost:3000", ACCESS_CONTROL_REQUEST_METHOD -> "PUT")).get
         header(ACCESS_CONTROL_ALLOW_ORIGIN, result) must beSome.which(_ == "localhost:3000")
-        header(ACCESS_CONTROL_ALLOW_CREDENTIALS, result) must beNone
+        header(ACCESS_CONTROL_ALLOW_CREDENTIALS, result) must beSome.which(_ == "true")
       }
       
       "include Access-Control-Max-Age header for a resource that has max age configured" in new WithApplication(fakeApp) {

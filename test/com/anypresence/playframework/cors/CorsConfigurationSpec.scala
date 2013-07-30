@@ -35,7 +35,8 @@ class CorsConfigurationSpec extends Specification {
                                      |      origins: [ "/http:\\/\\/.*\\.apple\\.com/" ],
                                      |      resources: [ 
                                      |        {
-                                     |          resource_pattern: "/file/list_none"
+                                     |          resource_pattern: "/file/list_none",
+                                     |          supports_credentials: false
                                      |        }
                                      |      ]
                                      |    }, 
@@ -67,7 +68,7 @@ class CorsConfigurationSpec extends Specification {
         firstResource.resourcePattern must equalTo("/file/list_all")
         firstResource.methods must equalTo(Seq("GET", "PUT", "POST", "DELETE", "TRACE", "CONNECT", "OPTIONS", "HEAD"))
         firstResource.expose must equalTo(Seq[String]())
-        firstResource.supportsCredentials must equalTo(false)
+        firstResource.supportsCredentials must equalTo(true)
         firstResource.maxAge must beNone
         
         val secondResource = firstCors.resources(1)
@@ -100,7 +101,7 @@ class CorsConfigurationSpec extends Specification {
         lastResource.headers(0) must equalTo("*")
         lastResource.methods must equalTo(Seq("GET"))
         lastResource.expose must equalTo(Seq[String]())
-        lastResource.supportsCredentials must equalTo(false)
+        lastResource.supportsCredentials must equalTo(true)
         lastResource.maxAge must beNone
       }
     }
