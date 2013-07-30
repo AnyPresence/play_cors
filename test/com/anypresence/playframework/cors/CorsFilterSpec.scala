@@ -77,7 +77,7 @@ class CorsFilterSpec extends Specification {
                                      |      resources: [
                                      |        {
                                      |          resource_pattern: "/public/*", 
-                                     |          headers: [ "any" ],
+                                     |          headers: [ "*" ],
                                      |          methods: [ "GET" ]
                                      |        }
                                      |      ]
@@ -239,12 +239,18 @@ class CorsFilterSpec extends Specification {
       "Use origin * when requested origin is not found" in new WithApplication(fallbackFakeApp) {
         val result = route(FakeRequest("OPTIONS", "/public/cats").withHeaders(ORIGIN -> "www.somefakedomain.com:3000", ACCESS_CONTROL_REQUEST_METHOD -> "GET")).get
         header(ACCESS_CONTROL_ALLOW_ORIGIN, result) must beSome
-        header(ACCESS_CONTROL_ALLOW_HEADERS, result) must beSome.which(_ == "any")
+        header(ACCESS_CONTROL_ALLOW_METHODS, result) must beSome.which(_ == "GET")
       }
       
-      "Return a 404 when no route exists for the object of the preflight request" in new WithServer(fakeApp, 3333) {
+      "Return a 404 when no route exists for the object of the preflight request" in new WithApplication(fakeApp) {
         val result = route(FakeRequest("OPTIONS", "/public/some_invalid_url").withHeaders(ORIGIN -> "www.somefakedomain.com:3000", ACCESS_CONTROL_REQUEST_METHOD -> "GET")).get
         status(result) must be equalTo(404)
+      }
+      
+      "Accept any header for a given resource" in new WithApplication(fallbackFakeApp) {
+        val result = route(FakeRequest("OPTIONS", "/public/cats").withHeaders(ORIGIN -> "www.somefakedomain.com:3000", ACCESS_CONTROL_REQUEST_METHOD -> "GET", "X-Ponies" -> "Look!  Ponies!  OMG")).get
+        header(ACCESS_CONTROL_ALLOW_ORIGIN, result) must beSome
+        header(ACCESS_CONTROL_ALLOW_HEADERS, result) must beSome.which(_.contains("X-Ponies"))
       }
       
     }

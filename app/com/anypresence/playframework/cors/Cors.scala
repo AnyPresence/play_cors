@@ -134,7 +134,7 @@ trait CorsImpl {
           noop
         } else {
           (result: PlainResult) => { 
-            val permittedHeaders = if (allowAllHeaders) request.headers.keys() else resource.headers
+            val permittedHeaders = if (allowAllHeaders) request.headers.keys else resource.headers
             
             val originVal = if (resource.supportsCredentials) origin else "*"
             var newResult = result.withHeaders(ACCESS_CONTROL_ALLOW_ORIGIN -> originVal)
