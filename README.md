@@ -30,7 +30,7 @@ You'll need to configure CORS settings similarly to the following example.  This
           resources: [
             {
               resource_pattern: "/public/*", 
-              headers: [ "any" ],
+              headers: [ "*" ],
               methods: [ "GET" ]
             }
           ]
