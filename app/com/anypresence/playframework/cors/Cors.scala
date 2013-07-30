@@ -273,7 +273,7 @@ protected[cors] object CorsConfigReader {
                                      |      resources: [
                                      |        {
                                      |          resource_pattern: "/public/*", 
-                                     |          headers: [ "any" ],
+                                     |          headers: [ "*" ],
                                      |          methods: [ "GET" ]
                                      |        }
                                      |      ]

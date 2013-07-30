@@ -36,7 +36,7 @@ class CorsConfigurationSpec extends Specification {
                                      |      resources: [
                                      |        {
                                      |          resource_pattern: "/public/*", 
-                                     |          headers: [ "any" ],
+                                     |          headers: [ "*" ],
                                      |          methods: [ "GET" ]
                                      |        }
                                      |      ]
@@ -78,7 +78,7 @@ class CorsConfigurationSpec extends Specification {
         val lastResource = secondCors.resources(0)
         lastResource.resourcePattern must equalTo("/public/*")
         lastResource.headers.size must equalTo(1)
-        lastResource.headers(0) must equalTo("any")
+        lastResource.headers(0) must equalTo("*")
         lastResource.methods must equalTo(Seq("GET"))
         lastResource.expose must equalTo(Seq[String]())
         lastResource.supportsCredentials must equalTo(false)
@@ -94,7 +94,7 @@ class CorsConfigurationSpec extends Specification {
                           |      origins: [ "*" ],
                           |      resources: [
                           |        {
-                          |          headers: [ "any" ],
+                          |          headers: [ "*" ],
                           |          methods: [ "GET" ]
                           |        }
                           |      ]
@@ -115,7 +115,7 @@ class CorsConfigurationSpec extends Specification {
                           |      resources: [
                           |        {
                           |          resource_pattern: "*",  
-                          |          headers: [ "any" ],
+                          |          headers: [ "*" ],
                           |          methods: [ "SPLORT" ]
                           |        }
                           |      ]
@@ -135,7 +135,7 @@ class CorsConfigurationSpec extends Specification {
                           |      resources: [
                           |        {
                           |          resource_pattern: "*",  
-                          |          headers: [ "any" ],
+                          |          headers: [ "*" ],
                           |          methods: [ "SPLORT" ]
                           |        }
                           |      ]
