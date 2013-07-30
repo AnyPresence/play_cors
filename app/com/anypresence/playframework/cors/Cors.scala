@@ -39,9 +39,8 @@ trait CorsImpl {
     implicit val requestedResource = req.path
     debug("Resource requested is " + requestedResource)
         
-    val resultHandlerFunction: (PlainResult) => Result = req.headers.get(ORIGIN).map { implicit requestedOrigin =>
-      debug("Received cors request for origin " + requestedOrigin)
-      val origin = if (requestedOrigin == "null") "file://" else requestedOrigin
+    val resultHandlerFunction: (PlainResult) => Result = req.headers.get(ORIGIN).map { implicit origin =>
+      debug("Received cors request for origin " + origin)
       
       // first check to see if requested origin is an exact match for one of the configured origins
       val resourcesMaybe = if (origins.get(origin).isDefined) {
