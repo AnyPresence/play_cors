@@ -99,9 +99,7 @@ trait CorsImpl {
     
     if (isPreflightRequest(req)) {
       val result = current.routes.map { routes => 
-        val wrapped = new WrappedRequest[AnyContent](req.asInstanceOf[Request[AnyContent]]) {
-          override def method = headers(ACCESS_CONTROL_REQUEST_METHOD)
-        }
+        val wrapped = req.copy(method = req.headers(ACCESS_CONTROL_REQUEST_METHOD))
         if (routes.handlerFor(wrapped).isDefined) {
           debug("Preflight request returning Ok because route is defined")
           Ok
