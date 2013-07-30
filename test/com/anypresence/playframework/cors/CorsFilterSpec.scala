@@ -214,7 +214,7 @@ class CorsFilterSpec extends Specification {
       
     }
     
-    "not respond with Origin header to request that is not valid simple request or valid preflight request" in {
+    /*"not respond with Origin header to request that is not valid simple request or valid preflight request" in {
       
       "using valid simple request as basline" in new WithApplication(fakeApp) {
         val result = route(FakeRequest("GET", "/file/list_all").withHeaders(ORIGIN -> "localhost:3000", CONTENT_TYPE -> "text/plain")).get
@@ -236,7 +236,7 @@ class CorsFilterSpec extends Specification {
         header(ACCESS_CONTROL_ALLOW_ORIGIN, result) must beNone
       }
       
-    }
+    }*/
     
     "be configured to" in {
       
@@ -287,9 +287,10 @@ class CorsFilterSpec extends Specification {
         header(ACCESS_CONTROL_ALLOW_ORIGIN, result) must beNone
       }
       
-      "omit CORS headers if Access-Control-Request-Method header is not present" in new WithApplication(fakeApp) {
+      "omit pre-flight CORS headers if Access-Control-Request-Method header is not present" in new WithApplication(fakeApp) {
         val result = route(FakeRequest("OPTIONS", "/file/at/1.html").withHeaders(ORIGIN -> "localhost:3000")).get
-        header(ACCESS_CONTROL_ALLOW_ORIGIN, result) must beNone
+        header(ACCESS_CONTROL_ALLOW_ORIGIN, result) must beSome
+        header(ACCESS_CONTROL_ALLOW_METHODS, result) must beNone
       }
       
       "omit CORS headers if Access-Control-Request-Method header is not in the list of allowed methods" in new WithApplication(fakeApp) {

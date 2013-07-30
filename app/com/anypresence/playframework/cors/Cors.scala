@@ -74,15 +74,12 @@ trait CorsImpl {
           debug("Requested resource is " + requestedResource + " .... compared with " + resource)
           resource.resourcePattern == requestedResource || (resource.resourcePattern.endsWith("*") && requestedResource.startsWith(resource.resourcePattern.dropRight(1)))
         }.map { resource: Resource =>
-          if (isSimpleRequest(req)) {
-            debug("Simple request detected for resource " + requestedResource)
-            handleSimple(origin, requestedResource, resource)
-          } else if (isPreflightRequest(req)) { 
+          if (isPreflightRequest(req)) { 
             debug("Preflight request detected for resource " + requestedResource)
             handlePreflight(req, resource, origin)
           } else {
-            debug("Received request with origin header, but was not a valid simple request or preflight request")
-            noop
+            debug("Simple request detected for resource " + requestedResource)
+            handleSimple(origin, requestedResource, resource)
           }
         }.getOrElse{
           debug("Unable to find matching resource among " + resources + " for origin " + origin + " and requestedResource " + requestedResource)
@@ -182,12 +179,12 @@ trait CorsImpl {
     }
   }
   
-  private def isSimpleRequest(implicit request: RequestHeader): Boolean = isSimpleRequestMethod && containsOnlySimpleHeaders && containsSimpleContentType
+/*  private def isSimpleRequest(implicit request: RequestHeader): Boolean = isSimpleRequestMethod && containsOnlySimpleHeaders && containsSimpleContentType
   
   private def isSimpleRequestMethod(implicit request: RequestHeader): Boolean = {
     debug("request method : " + request.method)
     Seq("GET", "HEAD", "POST").contains(request.method)
-  }
+  }*/
   
   private def containsOnlySimpleHeaders(implicit request: RequestHeader): Boolean = {
     debug("request headers : " + request.headers.keys)
