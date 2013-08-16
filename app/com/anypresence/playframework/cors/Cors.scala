@@ -101,7 +101,7 @@ trait CorsImpl {
           debug("Preflight request returning Ok because route is defined")
           Ok
         } else {
-          debug("Preflight request returning NotFound because route is not defined")          
+          debug("Preflight request returning NotFound because route is not defined for request method " + req.method + " and uri " + req.uri)
           NotFound
         }
       }.getOrElse {
