@@ -97,11 +97,12 @@ trait CorsImpl {
     if (isPreflightRequest(req)) {
       val result = current.routes.map { routes => 
         val wrapped = req.copy(method = req.headers(ACCESS_CONTROL_REQUEST_METHOD))
+        debug("Wrapped request is for method " + wrapped.method + " with uri " + uri)
         if (routes.handlerFor(wrapped).isDefined) {
           debug("Preflight request returning Ok because route is defined")
           Ok
         } else {
-          debug("Preflight request returning NotFound because route is not defined for request method " + wrapped.method + " and uri " + req.uri)
+          debug("Preflight request returning NotFound because route is not defined for request method " + wrapped.method + " and uri " + wrapped.uri)
           NotFound
         }
       }.getOrElse {
